@@ -1,43 +1,44 @@
-// server.js
-
+// Import necessary modules
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const morgan = require('morgan');
 const dotenv = require('dotenv');
-const redis = require('redis');
-const faqRoutes = require('./routes/faqRoutes');
-const userRoutes = require('./routes/userRoutes');
-const { authenticate } = require('./middlewares/authMiddleware');
+const userRoutes = require('./routes/authRoutes'); // Routes for user authentication
+const faqRoutes = require('./routes/faqRoutes');   // Routes for FAQ management
+const authenticate = require('./middleware/authMiddleware'); // JWT authentication middleware
 
+// Initialize environment variables
 dotenv.config();
 
-// Initialize Express App
+// Create an Express application
 const app = express();
 
-// Set up Redis client for caching
-const client = redis.createClient();
+// Middleware to parse incoming JSON requests
+app.use(express.json());
 
-// Middlewares
+// Enable Cross-Origin Resource Sharing (CORS) for all domains
 app.use(cors());
-app.use(bodyParser.json());
-app.use(morgan('dev')); // Logging middleware
 
-// MongoDB Connection
+// MongoDB connection using Mongoose
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+})
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch((err) => console.log('Error connecting to MongoDB:', err));
+
+// User authentication and FAQ management routes
+app.use('/api/auth', userRoutes); // Authentication routes (login, register)
+app.use('/api/faqs', authenticate, faqRoutes); // FAQ routes (CRUD operations)
+
+// Basic server check route
+app.get('/', (req, res) => {
+  res.send('Welcome to the FAQ API!');
 });
 
-// Use routes for FAQs and Users
-app.use('/api/faqs', faqRoutes); // FAQ routes
-app.use('/api/users', userRoutes); // User authentication routes
+// Set the server to listen on a specified port
+const PORT = process.env.PORT || 5000;
 
-// Start the server
-app.listen(process.env.PORT || 3000, () => {
-  console.log('Server is running on port 3000');
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
-
-
-
