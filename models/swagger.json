@@ -1,0 +1,107 @@
+// swagger.json
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "FAQ API",
+    "description": "API for managing FAQs with multilingual support",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/faqs": {
+      "get": {
+        "summary": "Get all FAQs",
+        "responses": {
+          "200": {
+            "description": "List of FAQs"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new FAQ",
+        "parameters": [
+          {
+            "name": "question",
+            "in": "body",
+            "description": "FAQ question",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "answer",
+            "in": "body",
+            "description": "FAQ answer",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "FAQ created successfully"
+          }
+        }
+      }
+    },
+    "/api/faqs/{id}": {
+      "get": {
+        "summary": "Get a specific FAQ by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "FAQ ID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ details",
+            "schema": {
+              "$ref": "#/definitions/FAQ"
+            }
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an FAQ by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "FAQ ID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FAQ deleted successfully"
+          },
+          "404": {
+            "description": "FAQ not found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "FAQ": {
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string"
+        },
+        "answer": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
