@@ -2,57 +2,42 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
-const redis = require('redis');
-const { translate } = require('@vitalets/google-translate-api');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger.json');
+const redis = require('redis');
+const faqRoutes = require('./routes/faqRoutes');
+const userRoutes = require('./routes/userRoutes');
+const { authenticate } = require('./middlewares/authMiddleware');
 
 dotenv.config();
+
+// Initialize Express App
 const app = express();
 
-// Redis client
+// Set up Redis client for caching
 const client = redis.createClient();
 
-// Middleware setup
+// Middlewares
 app.use(cors());
 app.use(bodyParser.json());
-app.use(morgan('dev'));
+app.use(morgan('dev')); // Logging middleware
 
-// Rate limiting for security
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
-  message: "Too many requests, please try again later."
-});
-app.use(limiter);
-
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/faqs', {
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
-// Swagger API documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Use routes for FAQs and Users
+app.use('/api/faqs', faqRoutes); // FAQ routes
+app.use('/api/users', userRoutes); // User authentication routes
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const faqRoutes = require('./routes/faqRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/faqs', faqRoutes);
-app.use('/admin', authenticate, adminRoutes); // Protecting admin routes
-
+// Start the server
 app.listen(process.env.PORT || 3000, () => {
-  console.log('Server running on port 3000');
+  console.log('Server is running on port 3000');
 });
+
 
 
