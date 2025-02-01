@@ -1,63 +1,41 @@
 // controllers/faqController.js
-const FAQ = require('../models/faq');
+
+const FAQ = require('../models/faqModel');
 const { translate } = require('@vitalets/google-translate-api');
+const redis = require('redis');
+const client = redis.createClient();
 
-// Get all FAQs
-const getFAQs = async (req, res) => {
-    try {
-        const faqs = await FAQ.find();
-        res.status(200).json(faqs);
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching FAQs" });
-    }
+// Create new FAQ
+exports.createFAQ = async (req, res) => {
+  const { question, answer } = req.body;
+  try {
+    const faq = new FAQ({ question, answer });
+    await faq.save();
+    res.status(201).json(faq);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Get a specific FAQ with translation support
-const getFAQById = async (req, res) => {
-    const { id } = req.params;
-    const lang = req.query.lang || 'en'; // Default to English if no lang parameter is provided
+// Get all FAQs with translations
+exports.getFAQs = async (req, res) => {
+  const lang = req.query.lang || 'en'; // Default language is English
 
-    try {
-        const faq = await FAQ.findById(id);
-        if (!faq) return res.status(404).json({ message: "FAQ not found" });
-
+  try {
+    const faqs = await FAQ.find();
+    const translatedFAQs = await Promise.all(
+      faqs.map(async (faq) => {
+        // Dynamically fetch translation for the selected language
         const translatedQuestion = await faq.getTranslatedQuestion(lang);
-        res.status(200).json({
-            question: translatedQuestion,
-            answer: faq.answer
-        });
-    } catch (error) {
-        res.status(500).json({ message: "Error fetching FAQ" });
-    }
+        return {
+          question: translatedQuestion,
+          answer: faq.answer,
+        };
+      })
+    );
+    res.json(translatedFAQs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Create a new FAQ
-const createFAQ = async (req, res) => {
-    const { question, answer } = req.body;
-    try {
-        const newFAQ = new FAQ({ question, answer });
-        await newFAQ.save();
-        res.status(201).json(newFAQ);
-    } catch (error) {
-        res.status(400).json({ message: "Error creating FAQ" });
-    }
-};
-
-// Delete a FAQ
-const deleteFAQ = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const faq = await FAQ.findByIdAndDelete(id);
-        if (!faq) return res.status(404).json({ message: "FAQ not found" });
-        res.status(200).json({ message: "FAQ deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Error deleting FAQ" });
-    }
-};
-
-module.exports = {
-    getFAQs,
-    getFAQById,
-    createFAQ,
-    deleteFAQ
-};
